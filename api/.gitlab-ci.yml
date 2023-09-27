@@ -1,0 +1,73 @@
+stages:
+  - prepare
+  - build
+  - deploy 
+
+cache: 
+  paths:
+    - node_modules/
+
+build-dep:
+  stage: prepare
+  image: node:14.18.1-alpine
+  script:
+    - npm i
+  only:
+    - /^staging_[0-9]+(?:.[0-9]+)+$/
+    - /^prod_[0-9]+(?:.[0-9]+)+$/
+
+build-staging:
+  image: docker:20.10.8
+  services:
+    - docker:20.10.8-dind
+  variables:
+    NODE_ENV: staging
+  before_script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
+  stage: build
+  script:
+    - docker build -t ${CI_REGISTRY}/${CI_PROJECT_PATH}/staging:latest .
+    - docker push ${CI_REGISTRY}/${CI_PROJECT_PATH}/staging:latest
+  only:
+    - /^staging_[0-9]+(?:.[0-9]+)+$/
+
+deploy-staging:
+  image: derit/kubectl
+  stage: deploy
+  script:
+  - mkdir -p ~/.kube
+  - echo "$kuberauth_staging" | tr -d '\r' > ~/.kube/config
+  - chmod 700 ~/.kube/config
+  - envsubst < deploy_staging.yml > "deployment-${CI_COMMIT_SHORT_SHA}.yml" 
+  - kubectl delete --ignore-not-found=true -f deployment-${CI_COMMIT_SHORT_SHA}.yml
+  - kubectl apply -f deployment-${CI_COMMIT_SHORT_SHA}.yml
+  only:
+    - /^staging_[0-9]+(?:.[0-9]+)+$/
+
+build-prod:
+  image: docker:20.10.8
+  services:
+    - docker:20.10.8-dind
+  variables:
+    NODE_ENV: production
+  before_script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" "$CI_REGISTRY" --password-stdin
+  stage: build
+  script:
+    - docker build -t ${CI_REGISTRY}/${CI_PROJECT_PATH}/prod:latest .
+    - docker push ${CI_REGISTRY}/${CI_PROJECT_PATH}/prod:latest
+  only:
+    - /^prod_[0-9]+(?:.[0-9]+)+$/
+
+deploy-prod:
+  image: derit/kubectl
+  stage: deploy
+  script:
+  - mkdir -p ~/.kube
+  - echo "$kuberauth_prod" | tr -d '\r' > ~/.kube/config
+  - chmod 700 ~/.kube/config
+  - envsubst < deploy_prod.yml > "deployment-${CI_COMMIT_SHORT_SHA}.yml" 
+  - kubectl delete --ignore-not-found=true -f deployment-${CI_COMMIT_SHORT_SHA}.yml
+  - kubectl apply -f deployment-${CI_COMMIT_SHORT_SHA}.yml
+  only:
+    - /^prod_[0-9]+(?:.[0-9]+)+$/
