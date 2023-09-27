@@ -4,13 +4,14 @@
 
 # 1. INSTALLATION
 
-1. Clone repository `git clone https://github.com/ahmadaait/mada-yatech-test.git`
-2. Install dependency using `npm install`
-3. Create a new database or execute test-yatech.sql file on root directory
-4. Setup .env file
-5. Run migration using `npx sequelize-cli db:seed:all`
-6. Run seeder using `npx sequelize-cli db:migrate`
-7. Start server using `npm run dev`
+1. Clone repository `git clone https://github.com/ahmadaait/yatech-challenge.git`
+2. Go to api directory `cd api`
+3. Install dependency using `npm install`
+4. Create a new database or execute test-yatech.sql file on root directory
+5. Setup .env file
+6. Run migration using `npx sequelize-cli db:seed:all`
+7. Run seeder using `npx sequelize-cli db:migrate`
+8. Start server using `npm run dev`
 
 # 2. API DOCS
 
